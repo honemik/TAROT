@@ -1,0 +1,99 @@
+---
+import Icon from '../components/Icon.astro';
+import { spreads, themes, faceUrl, backUrl } from '../domain/catalog';
+import '../styles/global.css';
+---
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#161d21" />
+    <meta name="description" content="選擇牌陣，或自由擺牌。你的塔羅牌桌。" />
+    <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}decks/back-indigo.svg`} />
+    <title>ARCANA — 你的塔羅牌桌</title>
+  </head>
+  <body>
+    <main id="app" class="app" aria-label="塔羅牌桌">
+      <header class="app-header">
+        <span class="wordmark" aria-label="ARCANA"><Icon name="Sun" size={21} /><span>ARCANA</span></span>
+        <button id="spread-picker" class="spread-trigger" data-open="library-dialog" title="選擇牌陣與牌面" aria-label="選擇牌陣與牌面"><img id="theme-mini" src={backUrl('rider-waite')} width="15" height="25" alt="" /><span id="spread-name">時間之流</span><Icon name="ChevronDown" size={14} /></button>
+        <button class="icon-button" popovertarget="table-menu" title="牌桌選單" aria-label="牌桌選單"><Icon name="Ellipsis" /></button>
+        <span id="save-status" class="sr-only">正在準備牌桌</span>
+      </header>
+      <div id="tab-notice" class="tab-notice" hidden><span>另一分頁正在編輯</span><button id="takeover">接續</button></div>
+      <section class="workspace" aria-label="抽牌與擺牌區">
+        <div id="table" class="table" aria-label="牌桌" tabindex="0">
+          <div class="table-mark" aria-hidden="true"><Icon name="Sun" size={100} /></div>
+          <div id="world" class="world"><div id="slots"></div><div id="placed-cards"></div></div>
+          <div id="placement-cursor" class="placement-cursor" hidden aria-hidden="true"></div>
+        </div>
+        <div class="card-context" id="card-context" hidden>
+          <button class="icon-button" id="view-card" title="查看大圖" aria-label="查看大圖"><Icon name="Expand" size={18} /></button>
+          <button class="icon-button" id="card-menu-trigger" popovertarget="card-menu" title="牌的更多操作" aria-label="牌的更多操作"><Icon name="Ellipsis" size={18} /></button>
+        </div>
+        <button class="icon-button fit-button" id="fit-button" title="全陣適配" aria-label="全陣適配"><Icon name="Scan" size={18} /></button>
+      </section>
+      <section class="drawing-dock" aria-label="牌堆">
+        <button id="shuffle" class="icon-button dock-button" title="洗牌" aria-label="洗牌"><Icon name="Shuffle" size={20} /></button>
+        <button id="deck-pile" class="deck-pile" aria-label="從牌堆抽一張牌" title="抽牌">
+          <span class="stack" aria-hidden="true"><img class="stack-card stack-bottom" src={backUrl('rider-waite')} alt="" draggable="false" /><img class="stack-card stack-middle" src={backUrl('rider-waite')} alt="" draggable="false" /><img class="stack-card stack-top" src={backUrl('rider-waite')} alt="" draggable="false" /></span>
+          <span id="remaining-count" class="remaining-count" aria-hidden="true">78</span><span id="draw-label" class="draw-label" aria-hidden="true">抽牌</span>
+        </button>
+        <button class="icon-button dock-button" id="undo" title="復原 Ctrl／Cmd＋Z" aria-label="復原" disabled><Icon name="Undo2" size={20} /></button>
+        <button class="reset-button" id="reset"><Icon name="RotateCcw" size={16} /><span>收牌重開</span></button>
+      </section>
+      <button id="exit-fullscreen" class="exit-fullscreen" hidden aria-label="離開全螢幕"><Icon name="X" size={18} /><span>離開全螢幕</span></button>
+    </main>
+
+    <div id="table-menu" class="action-menu table-menu" popover="auto" aria-label="牌桌選單">
+      <div class="menu-zoom"><button class="icon-button" id="zoom-out" title="縮小" aria-label="縮小"><Icon name="Minus" size={18} /></button><output id="zoom-value" aria-label="縮放比例">100%</output><button class="icon-button" id="zoom-in" title="放大" aria-label="放大"><Icon name="Plus" size={18} /></button></div>
+
+      <button class="menu-item" id="copy-prompt" disabled><Icon name="Copy" size={17} /><span>複製解讀 Prompt</span></button>
+      <button class="menu-item" data-open="settings-dialog"><Icon name="SlidersHorizontal" size={17} /><span>設定</span></button>
+      <button class="menu-item" id="fullscreen" data-dismiss-menu><Icon name="Maximize" size={17} /><span>全螢幕</span></button>
+    </div>
+    <div id="card-menu" class="action-menu card-menu" popover="auto" aria-label="牌的更多操作">
+      <span id="selected-name" class="menu-caption">未揭牌</span>
+      <button class="menu-item" id="flip-card" data-dismiss-menu><Icon name="FlipHorizontal2" size={17} /><span>翻面</span></button>
+      <button class="menu-item" id="move-card" data-dismiss-menu><Icon name="Move" size={17} /><span>移動</span></button>
+      <button class="menu-item" id="rotate-card" data-dismiss-menu><Icon name="RotateCw" size={17} /><span>旋轉 15°</span></button>
+      <button class="menu-item" id="raise-card" data-dismiss-menu><Icon name="Layers" size={17} /><span>移至最上層</span></button>
+      <button class="menu-item" id="cycle-card" data-dismiss-menu><Icon name="ChevronRight" size={17} /><span>選取下一張</span></button>
+    </div>
+
+    <dialog id="library-dialog" class="panel-dialog library-dialog" aria-label="選擇牌陣與牌面">
+      <div class="dialog-heading"><div class="library-tabs" role="tablist" aria-label="牌桌選擇"><button id="spread-tab" role="tab" aria-selected="true" aria-controls="spread-panel" tabindex="0">牌陣</button><button id="theme-tab" role="tab" aria-selected="false" aria-controls="theme-panel" tabindex="-1">牌面</button></div><button class="icon-button" data-close aria-label="關閉"><Icon name="X" /></button></div>
+      <div id="spread-panel" role="tabpanel" aria-labelledby="spread-tab"><div class="spread-list">{spreads.map(spread => <button class="spread-option" data-spread={spread.id}>
+        <span class={`spread-mini mini-${spread.id}`} aria-hidden="true">{spread.id === 'free' ? <Icon name="Move" size={23} /> : spread.slots.map(slot => <span style={`--x:${slot.x};--y:${slot.y};--a:${slot.angle}deg;`} />)}</span><strong>{spread.name}</strong><span class="option-count">{spread.slots.length ? spread.slots.length : ''}</span><span class="option-check"><Icon name="Check" size={17} /></span>
+      </button>)}</div></div>
+      <div id="theme-panel" role="tabpanel" aria-labelledby="theme-tab" hidden><div class="theme-options">{themes.map(theme => <button class="theme-option" data-theme={theme.id}>
+        <span class="theme-preview"><img src={faceUrl(theme.id, 'major-02')} alt="" loading="lazy" /><img src={faceUrl(theme.id, 'major-17')} alt="" loading="lazy" /><img src={faceUrl(theme.id, 'major-19')} alt="" loading="lazy" /></span><span class="theme-option-title"><strong>{theme.name}</strong><span class="option-check"><Icon name="Check" size={17} /></span></span>
+      </button>)}</div></div>
+    </dialog>
+
+    <dialog id="settings-dialog" class="panel-dialog" aria-labelledby="settings-title">
+      <div class="dialog-heading"><h2 id="settings-title">設定</h2><button class="icon-button" data-close aria-label="關閉"><Icon name="X" /></button></div>
+      <label class="setting-row"><span><strong>正逆位</strong><small id="reversal-note">每張牌各有 50% 機會逆位</small></span><input id="reversals" type="checkbox" role="switch" checked /></label>
+      <label class="setting-row"><strong>抽牌與洗牌動畫</strong><input id="animations" type="checkbox" role="switch" checked /></label>
+      <label class="setting-row"><strong>格線吸附</strong><input id="snap" type="checkbox" role="switch" /></label>
+      <details class="settings-details"><summary>操作說明</summary><p>點牌堆抽牌，點牌背揭牌。自由模式可拖曳擺牌，或點牌堆後選目的地。</p><p>拖空白處平移，滾輪或雙指縮放。更多選單可調整視角，右下角可回到全陣。</p><p>選牌後可查看大圖，或在更多選單翻面、旋轉、移動、調整堆疊。「選取下一張」可選到被蓋住的牌。</p><p>Tab 切換、Enter 啟動、Esc 取消；自由模式可用方向鍵移動選中牌，Ctrl／Cmd＋Z 復原。</p><div class="pan-buttons" aria-label="移動觀看範圍"><button class="icon-button" data-pan="left" aria-label="觀看範圍向左"><Icon name="ArrowLeft" /></button><button class="icon-button" data-pan="up" aria-label="觀看範圍向上"><Icon name="ArrowUp" /></button><button class="icon-button" data-pan="down" aria-label="觀看範圍向下"><Icon name="ArrowDown" /></button><button class="icon-button" data-pan="right" aria-label="觀看範圍向右"><Icon name="ArrowRight" /></button></div></details>
+      <details class="settings-details"><summary>素材來源</summary><p>偉特：Pamela Colman Smith／Arthur Edward Waite，1909；Steve P. 掃描修復。馬賽：Wikimedia Commons 公有領域圖像，力量／正義按牌義對應。牌背為原創 SVG。</p><a href="https://github.com/mixvlad/TarotCards/blob/main/SOURCES.md" target="_blank" rel="noreferrer">來源與授權 <Icon name="ArrowUpRight" size={13} /></a></details>
+      <span id="save-status-details" class="settings-note">牌桌自動保存在此瀏覽器</span>
+    </dialog>
+    <dialog id="viewer-dialog" class="viewer-dialog">
+      <button class="icon-button viewer-close" data-close aria-label="關閉大圖"><Icon name="X" /></button>
+      <div class="viewer-image-wrap"><img id="viewer-image" src={backUrl('rider-waite')} alt="未揭牌" /><button id="retry-image" class="secondary-button" hidden>重新載入</button></div>
+      <div class="viewer-caption"><button class="icon-button" id="previous-card" aria-label="上一張已揭牌"><Icon name="ChevronLeft" /></button><div><h2 id="viewer-name">未揭牌</h2><p id="viewer-position"></p></div><button class="icon-button" id="next-card" aria-label="下一張已揭牌"><Icon name="ChevronRight" /></button></div>
+    </dialog>
+    <dialog id="reset-dialog" class="panel-dialog compact-dialog"><div class="dialog-heading"><h2>收牌重開？</h2><button class="icon-button" data-close aria-label="關閉"><Icon name="X" /></button></div><p class="dialog-description">收回桌上的牌，重新洗牌。</p><div class="dialog-actions"><button class="secondary-button" data-close>取消</button><button id="confirm-reset" class="primary-button">重開</button></div></dialog>
+    <dialog id="switch-dialog" class="panel-dialog compact-dialog"><div class="dialog-heading"><h2>保留已抽牌？</h2><button class="icon-button" data-close aria-label="關閉"><Icon name="X" /></button></div><p class="dialog-description">多出的牌會留在新牌陣下方。</p><div class="dialog-actions"><button id="switch-fresh" class="secondary-button">收牌重開</button><button id="switch-keep" class="primary-button">保留</button></div></dialog>
+    <dialog id="restore-dialog" class="panel-dialog compact-dialog"><div class="dialog-heading"><h2>無法接續牌桌</h2></div><p id="restore-message" class="dialog-description"></p><div class="dialog-actions"><button id="restore-retry" class="secondary-button">重試</button><button id="restore-new" class="primary-button">使用暫存牌桌</button></div></dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <noscript><div class="noscript">請啟用 JavaScript 以使用牌桌。</div></noscript>
+    <script>
+      import { startTable } from '../table/controller';
+      startTable();
+    </script>
+  </body>
+</html>

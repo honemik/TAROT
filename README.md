@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-預設開發網址為 http://localhost:4321。也可在同一區域網路的手機開啟終端機顯示的 Network 網址。正式環境建議 HTTPS。
+預設開發網址為 http://localhost:4321/TAROT/。也可在同一區域網路的手機開啟終端機顯示的 Network 網址並加上 `/TAROT/`。正式環境建議 HTTPS。
 
 Astro 7 需要 Node 22.23.4 以上；本專案附開發用的 `node` 套件，`npm run` 會優先使用專案內的版本，不更動系統 Node。首次安裝可由既有 Node 22.13 及 npm 完成，安裝前半段可能顯示 engine 提醒。若主機已安裝相容的 Node，可自行移除這個開發相依套件。
 
@@ -20,7 +20,9 @@ npm run build    # 產生 dist/
 npm run preview  # 檢查正式靜態輸出
 ```
 
-將 `dist/` 部署到任意靜態主機即可。牌面已附在 `public/decks/`；開發安裝不需要重新下載。若部署到子路徑，請先在 `astro.config.mjs` 設定 `base` 再建置。
+目前部署網址為 https://honemik-astro-blog.pages.dev/TAROT/，`astro.config.mjs` 已設定 `base: '/TAROT/'`。執行 `npm run build` 後，將 `dist/` 的完整內容放到主網站發布目錄的 `TAROT/` 底下，包含 `_astro/` 和 `decks/`，再重新部署主網站。`base` 會修正資源網址，不會在 `dist/` 裡額外建立 `TAROT/` 資料夾。請勿只複製 `index.html`。
+
+牌面已附在 `public/decks/`；開發安裝不需要重新下載。若改成獨立網站根目錄部署，請將 `base` 改成 `/` 並更新 `site`，再重新建置並發布 `dist/`。
 
 ## 操作
 
